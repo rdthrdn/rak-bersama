@@ -73,3 +73,16 @@ export type BookWithProgress = BookRow & {
   owner: Pick<ProfileRow, "id" | "display_name" | "initials">;
   cover_url: string | null;
 };
+
+export type BookCard = Omit<BookRow, "file_path" | "cover_path"> & {
+  progress: number;
+  viewer_is_owner: boolean;
+  owner: Pick<ProfileRow, "id" | "display_name" | "initials"> | null;
+  cover_url: string | null;
+};
+
+export type ReviewView = ReviewRow & {
+  author_name: string;
+  author_initials: string;
+  viewer_is_author: boolean;
+};

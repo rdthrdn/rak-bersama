@@ -1,19 +1,41 @@
-import type { Book, ReadingStatus } from "@/data/books";
+import type { ReadingStatus } from "@/lib/database.types";
 
-export function displayTitle(book: Book): string {
-  return book.displayTitle || book.title;
+const statusLabels: Record<ReadingStatus, string> = {
+  reading: "Sedang dibaca",
+  finished: "Selesai",
+  dropped: "Dihentikan",
+  paused: "Dijeda",
+  unread: "Belum dibaca",
+};
+
+export function statusText(status: ReadingStatus) {
+  return statusLabels[status];
 }
 
-export function statusText(status: ReadingStatus): string {
-  const labels: Record<ReadingStatus, string> = {
-    Reading: "Sedang dibaca",
-    Finished: "Selesai",
-    Dropped: "Dihentikan",
-    Paused: "Dijeda",
+export function normalizeTitleAuthor(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("id-ID")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+export function normalizeLanguage(value: string) {
+  const normalized = value.trim().toLowerCase().replace(/_/g, "-");
+  const base = normalized.split("-")[0];
+  const known: Record<string, string> = {
+    en: "Inggris",
+    eng: "Inggris",
+    id: "Indonesia",
+    ind: "Indonesia",
+    ko: "Korea",
+    kor: "Korea",
   };
-  return labels[status];
+  return known[normalized] ?? known[base] ?? value.trim();
 }
 
-export function seedFromId(id: string): number {
-  return Array.from(id).reduce((value, character) => value + character.charCodeAt(0), 0);
+export function seedFromId(id: string) {
+  return Array.from(id).reduce((value, character) => value + character.codePointAt(0)!, 0);
 }

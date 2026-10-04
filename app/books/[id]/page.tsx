@@ -1,11 +1,19 @@
 import { notFound } from "next/navigation";
-import { BookDetail } from "@/components/book-detail";
-import { books } from "@/data/books";
+import { BookDetail, BookDetailError } from "@/components/book-detail";
+import { requireMember } from "@/lib/auth";
+import { getBookDetailData } from "@/lib/book-repository";
+
+export const dynamic = "force-dynamic";
 
 export default async function BookPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const book = books.find((entry) => entry.id === id);
-
-  if (!book) notFound();
-  return <BookDetail book={book} />;
+  const { supabase, user } = await requireMember();
+  let data: Awaited<ReturnType<typeof getBookDetailData>>;
+  try {
+    data = await getBookDetailData(supabase, user.id, id);
+  } catch {
+    return <BookDetailError />;
+  }
+  if (!data) notFound();
+  return <BookDetail data={data} />;
 }

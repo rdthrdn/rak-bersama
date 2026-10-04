@@ -3,6 +3,7 @@
 import { useRef, useState, type DragEvent, type FormEvent } from "react";
 import { extractEpubMetadata } from "@/lib/epub-metadata";
 import { coverExtension, detectCoverType, validateSelectedBook } from "@/lib/file-validation";
+import { normalizeLanguage } from "@/lib/book-utils";
 import { createClient } from "@/lib/supabase/client";
 import type { BookFormat, ReadingStatus } from "@/lib/database.types";
 
@@ -64,7 +65,8 @@ function filenameTitle(name: string) {
 async function pdfDetails(file: File) {
   const pdfjs = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
-  const pdfDocument = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
+  const pdfDocument = await loadingTask.promise;
   const metadata = await pdfDocument.getMetadata().catch(() => null);
   const info = metadata?.info as Record<string, unknown> | undefined;
   const title = typeof info?.Title === "string" ? info.Title.trim() : "";
@@ -75,14 +77,13 @@ async function pdfDetails(file: File) {
   const canvas = window.document.createElement("canvas");
   canvas.width = Math.ceil(viewport.width);
   canvas.height = Math.ceil(viewport.height);
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("Pratinjau halaman PDF belum dapat dibuat.");
-  await firstPage.render({ canvasContext: context, viewport }).promise;
+  if (!canvas.getContext("2d")) throw new Error("Pratinjau halaman PDF belum dapat dibuat.");
+  await firstPage.render({ canvas, viewport }).promise;
   const cover = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.86));
   canvas.width = 0;
   canvas.height = 0;
   const totalPages = String(pdfDocument.numPages);
-  await pdfDocument.destroy();
+  await loadingTask.destroy();
   return { title, author, totalPages, cover };
 }
 
@@ -121,7 +122,7 @@ export function UploadWorkbench() {
             ...nextMetadata,
             title: epub.title || fallbackTitle,
             author: epub.author,
-            language: epub.language || "Inggris",
+            language: epub.language ? normalizeLanguage(epub.language) : "Inggris",
             synopsis: epub.description,
           };
           cover = epub.cover;
