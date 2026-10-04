@@ -7,6 +7,7 @@ type SettingsPopoverProps = {
   theme: ReaderTheme;
   fontSize: number;
   lineHeight: number;
+  typographyEnabled: boolean;
   onThemeChange: (theme: ReaderTheme) => void;
   onFontSizeChange: (size: number) => void;
   onLineHeightChange: (height: number) => void;
@@ -23,6 +24,7 @@ export function SettingsPopover({
   theme,
   fontSize,
   lineHeight,
+  typographyEnabled,
   onThemeChange,
   onFontSizeChange,
   onLineHeightChange,
@@ -50,29 +52,33 @@ export function SettingsPopover({
         </div>
       </fieldset>
 
-      <label className="range-setting">
-        <span>Ukuran teks <output>{fontSize}px</output></span>
-        <input
-          type="range"
-          min="16"
-          max="26"
-          step="1"
-          value={fontSize}
-          onChange={(event) => onFontSizeChange(Number(event.target.value))}
-        />
-      </label>
+      {typographyEnabled && (
+        <>
+          <label className="range-setting">
+            <span>Ukuran teks <output>{fontSize}px</output></span>
+            <input
+              type="range"
+              min="16"
+              max="26"
+              step="1"
+              value={fontSize}
+              onChange={(event) => onFontSizeChange(Number(event.target.value))}
+            />
+          </label>
 
-      <label className="range-setting">
-        <span>Jarak baris <output>{lineHeight.toFixed(1)}</output></span>
-        <input
-          type="range"
-          min="1.5"
-          max="2.1"
-          step="0.1"
-          value={lineHeight}
-          onChange={(event) => onLineHeightChange(Number(event.target.value))}
-        />
-      </label>
+          <label className="range-setting">
+            <span>Jarak baris <output>{lineHeight.toFixed(1)}</output></span>
+            <input
+              type="range"
+              min="1.5"
+              max="2.1"
+              step="0.1"
+              value={lineHeight}
+              onChange={(event) => onLineHeightChange(Number(event.target.value))}
+            />
+          </label>
+        </>
+      )}
     </section>
   );
 }
