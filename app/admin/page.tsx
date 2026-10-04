@@ -17,7 +17,6 @@ export default async function AdminPage() {
         <a href="/" className="wordmark">Rak <em>bersama</em></a>
       </header>
       <section className="admin-content">
-        <p className="eyebrow-line">Pengelolaan anggota</p>
         <h1>Daftar <em>undangan</em></h1>
         <p className="admin-lede">Hanya alamat yang tercantum di sini dapat membuka arsip.</p>
         {error ? (
