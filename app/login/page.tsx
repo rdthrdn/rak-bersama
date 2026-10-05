@@ -1,4 +1,4 @@
-import { LoginPanel } from "@/components/login-panel";
+import { LoginButton } from "@/components/login-button";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function LoginPage({
@@ -14,7 +14,7 @@ export default async function LoginPage({
         <a href="/login" className="wordmark">Rak <em>bersama</em></a>
         {params.denied === "1" ? (
           <div className="login-copy" role="status">
-            <h1 id="login-title">Akses <em>belum diberikan</em></h1>
+            <h1 id="login-title">Akses <em>belum</em> diberikan</h1>
             <p>Email ini belum tercantum dalam daftar anggota. Hubungi pengelola arsip untuk meminta undangan.</p>
           </div>
         ) : (
@@ -33,5 +33,3 @@ export default async function LoginPage({
     </main>
   );
 }
-
-import { LoginButton } from "@/components/login-button";

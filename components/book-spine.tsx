@@ -5,8 +5,9 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { BookCard } from "@/lib/database.types";
 import { seedFromId, statusText } from "@/lib/book-utils";
+import { KlimtPattern, type KlimtMotif } from "@/components/patterns/klimt-pattern";
 
-const patterns = ["mosaic", "circles", "flowers", "strips", "triangles", "tree"];
+const patterns: KlimtMotif[] = ["mosaic", "medallion", "flowers", "stripes", "tiles", "tree"];
 const colors = ["#424633", "#513936", "#333231", "#776C58", "#6C5B3E"];
 
 export function BookSpine({ book, index }: { book: BookCard; index: number }) {
@@ -18,13 +19,14 @@ export function BookSpine({ book, index }: { book: BookCard; index: number }) {
     "--spine-height": `${276 + ((seed + index * 3) % 7) * 19}px`,
     "--spine-width": `${92 + ((seed + index) % 4) * 9}px`,
     "--tilt": `${(seed % 9) - 4}deg`,
-    "--pattern-shift": `${seed % 6}`,
   } as CSSProperties;
+  const pattern = patterns[seed % patterns.length];
 
   return (
     <motion.button
       type="button"
-      className={`book-spine pattern-${patterns[seed % patterns.length]}`}
+      className="book-spine"
+      data-pattern={pattern}
       style={style}
       aria-label={`${book.title} — ${book.author}, buka detail`}
       layoutId={`book-cover-${book.id}`}
@@ -35,7 +37,7 @@ export function BookSpine({ book, index }: { book: BookCard; index: number }) {
       whileTap={reduceMotion ? undefined : { scale: 0.985 }}
       onClick={() => router.push(`/books/${book.id}`)}
     >
-      <span className="spine-pattern" aria-hidden="true" />
+      <span className="spine-pattern"><KlimtPattern motif={pattern} id={book.id} seed={seed} base={colors[seed % colors.length]} /></span>
       <span className="spine-label">
         <span className="spine-title">{book.title}</span>
         <span className="spine-author">{book.author}</span>

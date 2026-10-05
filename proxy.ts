@@ -35,7 +35,8 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data: { claims }, error } = await supabase.auth.getClaims();
+  const { data, error } = await supabase.auth.getClaims();
+  const claims = data?.claims;
   if (error || !claims?.sub) {
     if (publicPaths.has(pathname)) return response;
     return loginRedirect(request);

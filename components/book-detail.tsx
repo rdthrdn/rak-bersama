@@ -64,7 +64,7 @@ export function BookDetail({ data }: { data: BookDetailData }) {
       </header>
 
       <article className="detail-layout">
-        <div className="detail-cover-column"><BookCover book={book} /></div>
+        <div className="detail-cover-column"><div className="detail-art-arch" aria-hidden="true" /><BookCover book={book} /></div>
         <div className="detail-content">
           <p className="detail-author">{book.author}{book.owner ? ` · ${book.owner.display_name}` : ""}</p>
           <h1><BookTitle book={book} /></h1>

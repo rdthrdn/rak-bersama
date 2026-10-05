@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Newsreader } from "next/font/google";
 import { MotionShell } from "@/components/motion-shell";
+import { ArtCreditsFooter } from "@/components/art-credits-footer";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="id">
       <body className={cormorant.variable + " " + newsreader.variable}>
         <MotionShell>{children}</MotionShell>
+        <ArtCreditsFooter />
       </body>
     </html>
   );

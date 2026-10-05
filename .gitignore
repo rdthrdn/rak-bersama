@@ -10,3 +10,4 @@ output/
 !.env.example
 playwright-report/
 test-results/
+tests/e2e/.auth/

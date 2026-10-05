@@ -1,0 +1,27 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+fs.mkdirSync('output/hd2d',{recursive:true});
+const browser=await chromium.launch({headless:true});
+let context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:2});let page=await context.newPage();const errors=[],failedRequests=[];
+page.setDefaultTimeout(60000);
+const observe=page=>{page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(`${m.text()} (${m.location().url}:${m.location().lineNumber})`);});page.on('requestfailed',r=>failedRequests.push(`${r.url()} ${r.failure()?.errorText}`));};observe(page);
+const state=()=>page.evaluate(()=>JSON.parse(window.render_game_to_text()));
+await page.goto('http://localhost:5173');await page.locator('[data-action="new"]').click();await page.waitForTimeout(2500);
+let s=await state();assert.equal(s.presentation.renderer,'WebGL 2.5D');assert.deepEqual(s.presentation.backing,[2880,1800]);assert.ok(s.presentation.triangles>20000);assert.ok(s.presentation.drawCalls<180);await page.screenshot({path:'output/hd2d/01-kampung-retina.png'});
+console.log('Retina rendering verified.');
+// Test interaction at DPR1 after proving Retina, to keep software-GPU runs affordable.
+const storageState=await context.storageState();await context.close();context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1,storageState});page=await context.newPage();page.setDefaultTimeout(60000);observe(page);await page.goto('http://localhost:5173');await page.locator('[data-action="continue"]').click();await page.waitForTimeout(800);s=await state();
+const start=s.player;await page.keyboard.down('ArrowRight');await page.evaluate(()=>window.advanceTime(300));await page.keyboard.up('ArrowRight');await page.waitForTimeout(450);s=await state();assert.ok(s.player.x>start.x+40);assert.ok(s.presentation.camera.x>start.x);
+// Ray-cast mouse navigation uses the visible camera, not the hidden simulation canvas.
+const hero=s.presentation.actors.find(a=>a.id==='kael');await page.mouse.click(hero.screen.x-90,hero.screen.y+45);await page.waitForTimeout(500);assert.ok((await state()).player.x<s.player.x);
+await page.keyboard.press('Escape');const paused=(await state()).player;await page.keyboard.down('ArrowRight');await page.evaluate(()=>window.advanceTime(300));await page.keyboard.up('ArrowRight');assert.deepEqual((await state()).player,paused);await page.keyboard.press('Escape');
+async function position(area,x,y){if(!(await state()).modal)await page.keyboard.press('Escape');await page.evaluate(({area,x,y})=>{const save=JSON.parse(localStorage.getItem('hundred-bonds-save-v1'));Object.assign(save.data,{area,x,y});localStorage.setItem('hundred-bonds-save-v1',JSON.stringify(save));},{area,x,y});await page.reload();await page.locator('[data-action="continue"]').click();await page.waitForFunction(a=>JSON.parse(window.render_game_to_text()).presentation?.scene===`world/${a}`,area);await page.waitForTimeout(600);console.log('Area verified:',area,x,y);}
+for(const [name,area,x,y]of [['02-alley','town',680,820],['03-road','road',1030,560],['04-belfry','dungeon',1200,460]]){await position(area,x,y);assert.equal((await state()).presentation.scene,`world/${area}`);await page.screenshot({path:`output/hd2d/${name}.png`});}
+await position('road',835,570);assert.equal((await state()).presentation.actors.find(a=>a.id==='kael').ground,10.5);
+await page.setViewportSize({width:390,height:844});await position('town',80,680);await page.waitForTimeout(700);let edge=(await state()).presentation.actors.find(a=>a.id==='kael');assert.ok(edge.screen.x>=0&&edge.screen.x<=390);await page.setViewportSize({width:1440,height:900});
+await position('road',490,680);await page.locator('[data-action="interact"]').first().click();await page.waitForTimeout(1200);s=await state();assert.equal(s.mode,'battle');assert.equal(s.presentation.scene,'battle/road');assert.equal(s.presentation.figures,5);for(const a of s.presentation.actors)if(a.ring)assert.ok(a.ring.height>a.ground);await page.screenshot({path:'output/hd2d/05-battle.png'});
+await page.waitForFunction(()=>{const s=JSON.parse(window.render_game_to_text());return !s.busy&&s.battle?.phase==='command';});await page.locator('[data-action="command"][data-value="attack"]').click();const enemy=(await state()).presentation.actors.find(a=>a.id==='slime-0');await page.mouse.click(enemy.screen.x,enemy.screen.y);await page.waitForTimeout(200);assert.notEqual((await state()).selectedCommand,'attack');await page.screenshot({path:'output/hd2d/06-hit.png'});
+await page.setViewportSize({width:1000,height:700});await page.waitForTimeout(500);assert.deepEqual((await state()).presentation.backing,[1000,700]);
+await page.setViewportSize({width:390,height:844});await page.waitForTimeout(500);for(const a of (await state()).presentation.actors)assert.ok(a.screen.x>=0&&a.screen.x<=390,`Portrait battle actor offscreen: ${a.id}`);await page.screenshot({path:'output/hd2d/07-portrait-battle.png'});
+assert.deepEqual(errors,[],`Browser errors: ${JSON.stringify(errors)}; failed requests: ${JSON.stringify(failedRequests)}`);fs.writeFileSync('output/hd2d/result.json',JSON.stringify({passed:true,retina:[2880,1800],errors,failedRequests},null,2));console.log('HD2D QA PASSED: Retina backing, geometry, all areas, keyboard/mouse/pause, battle target, resize.');await browser.close();
