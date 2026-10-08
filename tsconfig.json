@@ -38,11 +38,13 @@
     "data/**/*.ts",
     "lib/**/*.ts",
     "next.config.ts",
+    "proxy.ts",
+    "tests/**/*.ts",
+    "playwright.config.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "src",
-    "tests"
+    "tests/e2e/.auth"
   ]
 }
