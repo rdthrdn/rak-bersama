@@ -348,13 +348,20 @@ body:has(.reader-screen) .art-credits-footer { display: none; }
   border-radius: 50%;
   border: 1px solid rgba(163, 141, 93, 0.65);
   background: #2D2A24;
-  color: var(--cream);
+  color: #ECE9E2;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+html[data-theme="cream"] .archive-actions .member-avatar {
+  background: #F4EFE6;
+  color: #2A2924;
+  border-color: rgba(119, 108, 88, 0.6);
+  box-shadow: 0 1px 4px rgba(42, 41, 36, 0.12);
 }
 .theme-toggle-btn {
   display: inline-flex;
@@ -392,6 +399,27 @@ body:has(.reader-screen) .art-credits-footer { display: none; }
   font-weight: 600;
   font-size: 14px;
   letter-spacing: 0.03em;
+}
+html[data-theme="cream"] .theme-toggle-btn {
+  background: #F4EFE6;
+  color: #2A2924;
+  border-color: rgba(119, 108, 88, 0.45);
+}
+html[data-theme="cream"] .theme-toggle-btn:hover {
+  border-color: #8E784C;
+  color: #8E784C;
+}
+html[data-theme="cream"] .wordmark,
+html[data-theme="cream"] .wordmark-text,
+html[data-theme="cream"] .wordmark-text em {
+  color: #2A2924;
+}
+html[data-theme="cream"] .nav-link {
+  color: #5A5346;
+}
+html[data-theme="cream"] .nav-link:hover,
+html[data-theme="cream"] .nav-link.is-active {
+  color: #2A2924;
 }
 .member-menu {
   position: absolute;
@@ -444,9 +472,6 @@ html[data-theme="cream"] .shelf-tree-bg {
   mix-blend-mode: multiply;
   filter: sepia(0.2) saturate(1.2) contrast(1.08);
 }
-html[data-theme="cream"] .shelf-hero h1 {
-  text-shadow: 0 2px 14px rgba(42, 41, 36, 0.12);
-}
 .shelf-hero-left {
   position: relative;
   z-index: 2;
@@ -456,13 +481,17 @@ html[data-theme="cream"] .shelf-hero h1 {
 }
 .shelf-hero h1 {
   position: relative;
-  color: #EDE8DF;
+  color: var(--text);
   font-family: var(--font-cormorant), Georgia, serif;
   font-size: clamp(68px, 7.5vw, 104px);
   font-weight: 500;
   line-height: 0.95;
   letter-spacing: -0.025em;
   text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+html[data-theme="cream"] .shelf-hero h1 {
+  color: #2A2924 !important;
+  text-shadow: 0 1px 3px rgba(42, 41, 36, 0.08);
 }
 .shelf-controls {
   display: flex;
@@ -477,19 +506,22 @@ html[data-theme="cream"] .shelf-hero h1 {
   min-width: 160px;
 }
 .control-label {
-  color: #8E877B;
+  color: var(--text-muted);
   font-size: 12px;
   letter-spacing: 0.04em;
+}
+html[data-theme="cream"] .control-label {
+  color: #5A5346;
+  font-weight: 500;
 }
 .select-box {
   position: relative;
   display: flex;
   align-items: center;
-  border: 1px solid rgba(163, 141, 93, 0.4);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  background: rgba(30, 28, 24, 0.75);
-  backdrop-filter: blur(8px);
-  transition: border-color 180ms ease;
+  background: var(--surface);
+  transition: border-color 180ms ease, background-color 180ms ease;
 }
 .select-box:hover, .select-box:focus-within {
   border-color: var(--gold);
@@ -500,23 +532,59 @@ html[data-theme="cream"] .shelf-hero h1 {
   padding: 6px 32px 6px 14px;
   border: 0;
   background: transparent;
-  color: #EDE8DF;
+  color: var(--text);
   font-size: 13.5px;
   appearance: none;
   cursor: pointer;
   outline: none;
 }
 .select-box option, .status-editor option, .metadata-form option {
-  background: #25221B;
-  color: var(--cream);
+  background: var(--surface);
+  color: var(--text);
 }
 .select-caret {
   position: absolute;
   right: 12px;
   pointer-events: none;
-  color: #A38D5D;
+  color: var(--gold);
   font-size: 12px;
   line-height: 1;
+}
+html[data-theme="cream"] .select-box {
+  background: #F4EFE6;
+  border: 1px solid rgba(119, 108, 88, 0.45);
+  box-shadow: 0 1px 3px rgba(42, 41, 36, 0.08);
+}
+html[data-theme="cream"] .select-box select {
+  color: #2A2924;
+}
+html[data-theme="cream"] .select-box option {
+  background: #F4EFE6;
+  color: #2A2924;
+}
+html[data-theme="cream"] .select-caret {
+  color: #8E784C;
+}
+html[data-theme="cream"] .synopsis,
+html[data-theme="cream"] .review-copy > p {
+  color: #38342D;
+}
+html[data-theme="cream"] .detail-content h1,
+html[data-theme="cream"] .metadata-pill,
+html[data-theme="cream"] .reading-state-labels > span:last-child,
+html[data-theme="cream"] .matching-copy strong,
+html[data-theme="cream"] .review-meta,
+html[data-theme="cream"] .upload-content h1,
+html[data-theme="cream"] .edit-content h1,
+html[data-theme="cream"] .admin-content h1,
+html[data-theme="cream"] .login-copy h1,
+html[data-theme="cream"] .auth-tabs button[aria-selected="true"] {
+  color: #2A2924;
+}
+html[data-theme="cream"] .auth-field input {
+  color: #2A2924;
+  background: #F4EFE6;
+  border-color: rgba(119, 108, 88, 0.45);
 }
 
 .shelf-display {
