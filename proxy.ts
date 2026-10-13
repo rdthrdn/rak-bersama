@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
 import { getSupabaseConfig, isSupabaseConfigured } from "@/lib/supabase/config";
 
-const publicPaths = new Set(["/login", "/auth/callback"]);
+const publicPaths = new Set(["/login", "/auth/callback", "/api/auth/register"]);
 
 function loginRedirect(request: NextRequest, denied = false) {
   const target = new URL("/login", request.url);
