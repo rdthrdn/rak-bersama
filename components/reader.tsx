@@ -66,7 +66,9 @@ function applyThemeToRendition(
     : "";
   const fontFamily = `${fontName || "Newsreader, Georgia"}, serif`;
 
-  for (const [key, colors] of Object.entries(themeColors) as [ReaderTheme, { background: string; foreground: string }][]) {
+  const themeList: ReaderTheme[] = ["ink", "sepia", "cream"];
+  for (const key of themeList) {
+    const colors = themeColors[key];
     rendition.themes.register(key, {
       "html, body": {
         "background": `${colors.background} !important`,
@@ -86,23 +88,6 @@ function applyThemeToRendition(
   rendition.themes.fontSize(`${currentFontSize}px`);
   rendition.themes.override("line-height", String(currentLineHeight), true);
   rendition.themes.override("font-family", fontFamily, true);
-
-  const rawContents = rendition.getContents?.();
-  const contentsList = Array.isArray(rawContents) ? rawContents : rawContents ? [rawContents] : [];
-  const activeColors = themeColors[currentTheme];
-  for (const item of contentsList) {
-    const doc = item && typeof item === "object" && "document" in item && item.document instanceof Document
-      ? item.document
-      : null;
-    if (doc?.documentElement) {
-      doc.documentElement.style.setProperty("background-color", activeColors.background, "important");
-      doc.documentElement.style.setProperty("color", activeColors.foreground, "important");
-    }
-    if (doc?.body) {
-      doc.body.style.setProperty("background-color", activeColors.background, "important");
-      doc.body.style.setProperty("color", activeColors.foreground, "important");
-    }
-  }
 }
 
 
@@ -236,10 +221,13 @@ export function Reader({
               frame.style.backgroundColor = activeColors.background;
               const document = frame.contentDocument;
               if (!document) return;
-              document.documentElement?.style.setProperty("background-color", activeColors.background, "important");
-              document.documentElement?.style.setProperty("color", activeColors.foreground, "important");
-              document.body?.style.setProperty("background-color", activeColors.background, "important");
-              document.body?.style.setProperty("color", activeColors.foreground, "important");
+              const docEl = document.documentElement as HTMLElement | null;
+              docEl?.style.setProperty("background-color", activeColors.background, "important");
+              docEl?.style.setProperty("color", activeColors.foreground, "important");
+              if (document.body) {
+                document.body.style.setProperty("background-color", activeColors.background, "important");
+                document.body.style.setProperty("color", activeColors.foreground, "important");
+              }
 
               const start = (event: Event) => {
                 const touch = (event as Event & { touches: globalThis.TouchList }).touches[0];
@@ -266,10 +254,13 @@ export function Reader({
             const doc = contents.document;
             if (!doc) return;
             const activeColors = themeColors[themeRef.current];
-            doc.documentElement?.style.setProperty("background-color", activeColors.background, "important");
-            doc.documentElement?.style.setProperty("color", activeColors.foreground, "important");
-            doc.body?.style.setProperty("background-color", activeColors.background, "important");
-            doc.body?.style.setProperty("color", activeColors.foreground, "important");
+            const docEl = doc.documentElement as HTMLElement | null;
+            docEl?.style.setProperty("background-color", activeColors.background, "important");
+            docEl?.style.setProperty("color", activeColors.foreground, "important");
+            if (doc.body) {
+              doc.body.style.setProperty("background-color", activeColors.background, "important");
+              doc.body.style.setProperty("color", activeColors.foreground, "important");
+            }
           });
 
           applyThemeToRendition(builtRendition, themeRef.current, fontSizeRef.current, lineHeightRef.current);
@@ -368,6 +359,20 @@ export function Reader({
     const rendition = renditionRef.current;
     if (!rendition || book.format !== "epub") return;
     applyThemeToRendition(rendition, theme, fontSize, lineHeight);
+    const frames = mountRef.current?.querySelectorAll("iframe") ?? [];
+    const activeColors = themeColors[theme];
+    frames.forEach((frame) => {
+      frame.style.backgroundColor = activeColors.background;
+      const doc = frame.contentDocument;
+      if (!doc) return;
+      const docEl = doc.documentElement as HTMLElement | null;
+      docEl?.style.setProperty("background-color", activeColors.background, "important");
+      docEl?.style.setProperty("color", activeColors.foreground, "important");
+      if (doc.body) {
+        doc.body.style.setProperty("background-color", activeColors.background, "important");
+        doc.body.style.setProperty("color", activeColors.foreground, "important");
+      }
+    });
   }, [book.format, fontSize, lineHeight, theme]);
 
   useEffect(() => {
