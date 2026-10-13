@@ -85,6 +85,7 @@
   --text-muted: #9F9B90;
   --border: rgba(163, 141, 93, 0.35);
   --border-strong: rgba(163, 141, 93, 0.6);
+  --wall-base: #24221E;
   --font-cormorant: "Cormorant Garamond";
   --font-newsreader: "Newsreader";
   --ease-library: cubic-bezier(0.22, 1, 0.36, 1);
@@ -110,6 +111,7 @@ body[data-theme="cream"] {
   --text-muted: #686154;
   --border: rgba(119, 108, 88, 0.28);
   --border-strong: rgba(119, 108, 88, 0.55);
+  --wall-base: #E6E1D6;
   color-scheme: light;
 }
 
@@ -270,38 +272,36 @@ body:has(.reader-screen) .art-credits-footer { display: none; }
   position: absolute;
   z-index: -2;
   inset: 0 -64px;
-  height: 100%;
   content: "";
   pointer-events: none;
+  background-color: var(--wall-base);
   background-image:
-    radial-gradient(ellipse 80% 55% at 50% 20%, rgba(212, 184, 125, 0.16) 0%, transparent 75%),
-    radial-gradient(ellipse 90% 70% at 50% 65%, rgba(20, 18, 15, 0.45) 0%, rgba(14, 13, 11, 0.82) 100%),
+    radial-gradient(ellipse 120% 70% at 22% 8%, rgba(255, 241, 214, 0.10) 0%, rgba(255, 241, 214, 0.03) 42%, transparent 72%),
+    radial-gradient(ellipse 90% 60% at 78% 22%, rgba(255, 241, 214, 0.07) 0%, transparent 68%),
+    radial-gradient(ellipse 130% 80% at 50% 88%, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.18) 48%, transparent 78%),
     url("/noise.svg");
-  background-size: auto, auto, 190px 190px;
-  opacity: 0.96;
-  mix-blend-mode: overlay;
+  background-size: auto, auto, auto, 170px 170px;
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
 }
 html[data-theme="cream"] .shelf-page::before {
   background-image:
-    radial-gradient(ellipse 80% 55% at 50% 20%, rgba(255, 255, 255, 0.65) 0%, transparent 75%),
-    radial-gradient(ellipse 90% 70% at 50% 65%, rgba(230, 224, 212, 0.35) 0%, rgba(215, 206, 190, 0.75) 100%),
+    radial-gradient(ellipse 120% 70% at 22% 8%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 253, 246, 0.4) 42%, transparent 72%),
+    radial-gradient(ellipse 90% 60% at 78% 22%, rgba(255, 252, 242, 0.6) 0%, transparent 68%),
+    radial-gradient(ellipse 130% 80% at 50% 92%, rgba(180, 168, 146, 0.42) 0%, rgba(200, 190, 170, 0.14) 48%, transparent 78%),
     url("/noise.svg");
-  mix-blend-mode: multiply;
-  opacity: 0.88;
 }
 .shelf-wall-spotlight {
   position: absolute;
-  top: -70px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(92vw, 1200px);
-  height: 380px;
-  background: radial-gradient(ellipse 55% 45% at 50% 35%, rgba(220, 195, 140, 0.18) 0%, rgba(220, 195, 140, 0.05) 55%, transparent 75%);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background: radial-gradient(ellipse 70% 100% at 26% 0%, rgba(232, 208, 158, 0.10) 0%, rgba(232, 208, 158, 0.035) 45%, transparent 78%);
   pointer-events: none;
   z-index: 0;
 }
 html[data-theme="cream"] .shelf-wall-spotlight {
-  background: radial-gradient(ellipse 55% 45% at 50% 35%, rgba(255, 255, 255, 0.85) 0%, rgba(246, 240, 226, 0.4) 55%, transparent 75%);
+  background: radial-gradient(ellipse 70% 100% at 26% 0%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.2) 45%, transparent 78%);
 }
 
 .archive-header, .detail-header, .simple-header {
@@ -614,8 +614,8 @@ html[data-theme="cream"] .auth-field input {
 
 .shelf-display {
   position: relative;
-  margin-top: 10px;
   width: 100%;
+  margin: 10px -64px 0;
 }
 .shelf-stage {
   position: relative;
@@ -635,7 +635,7 @@ html[data-theme="cream"] .auth-field input {
   align-items: flex-end;
   justify-content: flex-start;
   gap: 14px;
-  padding: 24px 48px 0;
+  padding: 24px 120px 0;
   border-bottom: 0;
 }
 
@@ -800,10 +800,10 @@ html[data-theme="cream"] .auth-field input {
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.6));
 }
 .shelf-bracket-left {
-  left: 36px;
+  left: 8%;
 }
 .shelf-bracket-right {
-  right: 36px;
+  right: 8%;
 }
 .bracket-svg {
   width: 100%;
@@ -1272,9 +1272,9 @@ html[data-theme="cream"] .klimt-loading-card {
   .shelf-hero h1 { max-width: 100%; font-size: clamp(44px, 12vw, 68px); line-height: 1; }
   .shelf-controls { margin-top: 22px; gap: 14px; flex-wrap: wrap; }
   .select-control { min-width: 135px; flex: 1; }
-  .shelf-display { margin-top: 14px; }
+  .shelf-display { margin: 14px -20px 0; }
   .shelf-bracket { display: none; }
-  .shelf-rail { min-height: 340px; gap: 10px; padding: 18px 16px 0; }
+  .shelf-rail { min-height: 340px; gap: 10px; padding: 18px 40px 0; }
   .shelf-rail .book-spine { max-height: 310px; }
   .spine-label { right: 5px; left: 5px; min-height: 94px; padding: 8px 4px; }
   .spine-title { font-size: 13px; }
