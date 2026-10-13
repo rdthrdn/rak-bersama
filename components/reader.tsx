@@ -283,12 +283,6 @@ export function Reader({
             if (loadedBook.locations.length()) {
               const nextPercent = loadedBook.locations.percentageFromCfi(cfi) * 100;
               setPercent(nextPercent);
-            } else if (loadedBook.spine?.length) {
-              const section = loadedBook.spine.get(cfi);
-              if (section && typeof section.index === "number") {
-                const estimated = (section.index / loadedBook.spine.length) * 100;
-                setPercent(estimated);
-              }
             }
           });
 
