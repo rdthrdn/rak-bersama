@@ -54,6 +54,11 @@ export type Database = {
     Tables: {
       profiles: Table<ProfileRow, Pick<ProfileRow, "id" | "display_name" | "initials" | "role">>;
       allowed_emails: Table<{ email: string; created_at: string }, { email: string }, { email?: string }>;
+      admin_bootstrap_codes: Table<
+        { id: boolean; token_hash: string; consumed_at: string | null },
+        { id?: boolean; token_hash: string; consumed_at?: string | null },
+        { id?: boolean; token_hash?: string; consumed_at?: string | null }
+      >;
       books: Table<BookRow, Omit<BookRow, "created_at"> & { created_at?: string }>;
       reading_progress: Table<ReadingProgressRow, Omit<ReadingProgressRow, "updated_at"> & { updated_at?: string }>;
       reviews: Table<ReviewRow, Omit<ReviewRow, "id" | "created_at"> & { id?: string; created_at?: string }>;

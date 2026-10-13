@@ -17,8 +17,8 @@ export default async function AdminPage() {
         <a href="/" className="wordmark">Rak <em>bersama</em></a>
       </header>
       <section className="admin-content">
-        <h1>Daftar <em>undangan</em></h1>
-        <p className="admin-lede">Hanya alamat yang tercantum di sini dapat membuka arsip.</p>
+        <h1>Daftar <em>anggota</em></h1>
+        <p className="admin-lede">Pendaftaran terbuka. Email anggota di sini memiliki akses ke metadata dan catatan bersama.</p>
         {error ? (
           <p className="state-message" role="alert">Daftar anggota belum dapat dimuat.</p>
         ) : (

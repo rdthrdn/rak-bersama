@@ -575,6 +575,16 @@ body:has(.reader-screen) .art-credits-footer { display: none; }
 .login-action { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 27px; }
 .login-action .gold-button { min-width: 220px; }
 .login-action .gold-button:disabled { color: #D9D4C9; background: #625D53; }
+.auth-tabs { display: grid; width: min(100%, 360px); grid-template-columns: 1fr 1fr; border-bottom: 1px solid rgb(119 108 88 / 50%); }
+.auth-tabs button { min-height: 43px; border: 0; border-bottom: 2px solid transparent; color: var(--stone); background: transparent; font: inherit; cursor: pointer; }
+.auth-tabs button[aria-selected="true"] { border-bottom-color: var(--gold); color: var(--cream); }
+.auth-tabs button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.auth-form { display: grid; width: min(100%, 360px); gap: 14px; margin-top: 17px; }
+.auth-field { display: grid; gap: 7px; color: var(--stone); font-size: 13px; }
+.auth-field input { width: 100%; min-height: 46px; border: 1px solid rgb(163 141 93 / 46%); border-radius: 2px; padding: 0 12px; color: var(--cream); background: rgb(42 41 36 / 72%); font: inherit; }
+.auth-field input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.auth-form .auth-submit { width: 100%; min-height: 48px; margin-top: 3px; }
+.auth-note { color: var(--stone); font-size: 12px; line-height: 1.4; }
 .login-footer { display: block; margin-top: 76px; padding-top: 14px; border-top: 1px solid rgb(119 108 88 / 52%); color: var(--stone); font-size: 12px; letter-spacing: .04em; }
 
 /* Pembaca: ornament hanya di chrome, bidang baca tetap tenang. */

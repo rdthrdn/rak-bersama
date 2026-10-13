@@ -32,19 +32,20 @@ async function capture(page: Page, name: string) {
   await page.setViewportSize({ width: 1440, height: 1000 });
 }
 
-test("private routes send signed-out visitors to login", async ({ page }) => {
+test("anyone can open email/password registration while private routes require login", async ({ page }) => {
   test.setTimeout(90_000);
   assertLocalTarget();
   await page.goto("/login");
   await capture(page, "login");
-  await page.goto("/login?denied=1");
-  await expect(page.getByRole("heading", { name: /Akses.*belum/ })).toBeVisible();
-  await capture(page, "login-denied");
+  await page.getByRole("tab", { name: "Daftar" }).click();
+  await expect(page.getByLabel("Nama tampilan")).toBeVisible();
+  await expect(page.getByText("Pendaftaran terbuka. Akun langsung aktif tanpa verifikasi email.")).toBeVisible();
+  await capture(page, "login-register");
 
   for (const route of ["/", "/upload", "/admin", "/books/00000000-0000-4000-8000-000000000001"]) {
     await page.goto(route);
     await expect(page).toHaveURL(/\/login(?:\?|$)/);
-    await expect(page.getByRole("heading", { name: /Ruang baca|Akses/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Ruang baca/ })).toBeVisible();
   }
 });
 

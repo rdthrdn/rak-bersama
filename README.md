@@ -1,12 +1,11 @@
 # Rak bersama
 
-Rak bersama adalah arsip buku privat untuk kelompok kecil. Anggota yang diundang dapat berbagi metadata, sampul, status membaca, dan catatan; berkas EPUB/PDF hanya dapat dibuka pemiliknya. UI masuk memakai Google OAuth saja.
+Rak bersama adalah arsip buku untuk membaca bersama. Siapa saja dapat membuat akun dengan email dan kata sandi; akun langsung aktif tanpa verifikasi email. Anggota dapat berbagi metadata, sampul, status membaca, dan catatan, sementara berkas EPUB/PDF hanya dapat dibuka pemiliknya.
 
 ## Prasyarat
 
 - Node.js 20 atau lebih baru dan npm
 - Proyek Supabase
-- Google OAuth client untuk penggunaan hosted
 - Docker Desktop dan Supabase CLI untuk pengujian database lokal
 
 ## Jalankan aplikasi
@@ -21,11 +20,9 @@ Aplikasi tersedia di `http://localhost:3000`. Isi variabel Supabase di `.env.loc
 
 ## Siapkan Supabase hosted
 
-1. Buat proyek Supabase dan catat project ref, URL, anon/publishable key, dan service-role key.
-2. Di Google Cloud Console, buat OAuth client tipe Web. Tambahkan URI callback milik Supabase, `https://<project-ref>.supabase.co/auth/v1/callback`, ke **Authorized redirect URIs** Google.
-3. Di Supabase **Authentication → Providers → Google**, aktifkan Google lalu masukkan client ID dan secret dari Google Cloud.
-4. Di Supabase **Authentication → URL Configuration**, set Site URL ke origin produksi. Tambahkan callback aplikasi berikut ke **Redirect URLs**: `http://localhost:3000/auth/callback`, `http://127.0.0.1:3000/auth/callback`, dan `https://<domain-produksi>/auth/callback`. Tambahkan origin preview Vercel hanya jika preview tersebut memang akan dipakai untuk uji login.
-5. Terapkan kedua migrasi dari root proyek:
+1. Buat proyek Supabase dan catat URL, publishable key, dan service-role key.
+2. Pastikan penyedia **Email** aktif di **Authentication → Providers** dan pendaftaran diizinkan. Aplikasi membuat akun terkonfirmasi melalui endpoint server sehingga tidak mengirim atau menunggu verifikasi email.
+3. Terapkan migrasi dari root proyek:
 
    ~~~sh
    npx supabase login
@@ -34,25 +31,17 @@ Aplikasi tersedia di `http://localhost:3000`. Isi variabel Supabase di `.env.loc
    ~~~
 
    Migrasi membuat tabel, kebijakan RLS, dan bucket privat `books` serta `covers`; bucket tidak perlu dibuat lewat Dashboard.
-6. Sebelum login admin pertama, masukkan email yang sama persis dengan `ADMIN_EMAIL` ke allowlist melalui SQL Editor:
-
-   ~~~sql
-   insert into public.allowed_emails (email)
-   values (lower('admin@domain-anda.id'))
-   on conflict (email) do nothing;
-   ~~~
-
-7. Isi `.env.local` dengan URL/key proyek dan email admin:
+4. Atur variabel berikut di hosting:
 
    ~~~dotenv
    NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-atau-publishable-key>
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable-key>
    SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
    ADMIN_EMAIL=admin@domain-anda.id
    ~~~
 
-   `SUPABASE_SERVICE_ROLE_KEY` hanya dibaca di server. Jangan beri awalan `NEXT_PUBLIC_` dan jangan kirim ke browser.
-8. Setelah Google login pertama, profil admin dibuat otomatis. Admin dapat menambah dan menghapus undangan lewat halaman **Undangan**.
+   `SUPABASE_SERVICE_ROLE_KEY` hanya dibaca di server. Jangan beri awalan `NEXT_PUBLIC_` dan jangan kirim ke browser. `ADMIN_EMAIL` menentukan alamat yang dapat menerima role admin saat dibuat menggunakan kode pengelola awal.
+5. Semua akun baru otomatis masuk ke daftar anggota agar dapat membuka rak. Hanya email pada `ADMIN_EMAIL` dengan kode pengelola sekali pakai yang mendapat role admin; akun lain menjadi anggota biasa. Informasi buku dan catatan bersama dapat dilihat seluruh anggota; file buku hanya dapat dibuka pemiliknya.
 
 ## Jalankan migrasi lokal dan tes
 
@@ -101,15 +90,15 @@ Fixture EPUB/PDF berasal dari Project Gutenberg; tautan dan status domain publik
 ## Deploy ke Vercel
 
 1. Impor repository ke Vercel dan pertahankan build command `npm run build`.
-2. Tambahkan `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (atau `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`), `SUPABASE_SERVICE_ROLE_KEY`, dan `ADMIN_EMAIL` pada environment Production. Isi Preview hanya bila preview akan dipakai.
-3. Pastikan Google OAuth tetap memakai callback Supabase `https://<project-ref>.supabase.co/auth/v1/callback`; tambahkan URL callback aplikasi Vercel produksi ke Supabase Redirect URLs.
-4. Tambahkan email admin ke `public.allowed_emails` sebelum login pertamanya. Setelah deploy, uji masuk, undangan, unggah, serta buka EPUB dan PDF dengan anggota yang diizinkan.
+2. Tambahkan `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, dan `ADMIN_EMAIL` pada environment Production. Isi Preview hanya bila preview akan dipakai.
+3. Pastikan penyedia Email aktif di Supabase. Login dan pendaftaran email/password tidak memakai callback URL.
+4. Setelah deploy, gunakan kode pengelola awal satu kali saat mendaftar dengan alamat `ADMIN_EMAIL`. Pendaftaran email lain tetap terbuka dan otomatis menjadi anggota biasa. Setelah akun admin berhasil dibuat, kode tidak dapat digunakan lagi.
 
 ## Batas dan privasi
 
 - Batas berkas buku di aplikasi dan bucket adalah 50 MiB; sampul dibatasi 5 MiB.
 - Bucket tidak publik. Tautan baca dibuat server-side setelah pemeriksaan kepemilikan dan berlaku paling lama 60 detik.
-- Anggota dapat membaca metadata, sampul yang terdaftar, dan ulasan; progres serta berkas buku dibatasi ke pemilik.
+- Semua akun terdaftar dapat membaca metadata, sampul yang terdaftar, dan ulasan; progres serta berkas buku dibatasi ke pemilik.
 - Reader EPUB menonaktifkan konten berskrip di iframe sandbox. PDF ditampilkan oleh pdf.js.
-- OAuth live dan redirect Google memerlukan kredensial proyek sendiri; akun lokal browser-test tidak menguji provider Google.
+- Pendaftaran tidak memverifikasi kepemilikan alamat email. Semua akun baru mendapat akses sebagai anggota biasa; jangan menetapkan role admin hanya berdasarkan email yang dikirim pada pendaftaran terbuka.
 - Kredit dan lisensi karya Klimt ada di `public/art/CREDITS.md`.
