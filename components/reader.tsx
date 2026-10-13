@@ -39,6 +39,72 @@ function flattenToc(items: NavigationItem[], depth = 0): Array<NavigationItem & 
     ...flattenToc(item.subitems ?? [], depth + 1),
   ]);
 }
+function extractCfiAndDisplay(event: unknown): { cfi?: string; page?: number; total?: number } {
+  if (!event || typeof event !== "object" || !("start" in event) || !event.start || typeof event.start !== "object") {
+    return {};
+  }
+  const start = event.start;
+  const cfi = "cfi" in start && typeof start.cfi === "string" ? start.cfi : undefined;
+  let page: number | undefined;
+  let total: number | undefined;
+  if ("displayed" in start && start.displayed && typeof start.displayed === "object") {
+    const displayed = start.displayed;
+    if ("page" in displayed && typeof displayed.page === "number") page = displayed.page;
+    if ("total" in displayed && typeof displayed.total === "number") total = displayed.total;
+  }
+  return { cfi, page, total };
+}
+
+function applyThemeToRendition(
+  rendition: EpubRendition,
+  currentTheme: ReaderTheme,
+  currentFontSize: number,
+  currentLineHeight: number,
+) {
+  const fontName = typeof window !== "undefined"
+    ? window.getComputedStyle(document.body).getPropertyValue("--font-newsreader").trim()
+    : "";
+  const fontFamily = `${fontName || "Newsreader, Georgia"}, serif`;
+
+  for (const [key, colors] of Object.entries(themeColors) as [ReaderTheme, { background: string; foreground: string }][]) {
+    rendition.themes.register(key, {
+      "html, body": {
+        "background": `${colors.background} !important`,
+        "background-color": `${colors.background} !important`,
+        "color": `${colors.foreground} !important`,
+      },
+      "p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, em, strong, b, i": {
+        "color": `${colors.foreground} !important`,
+      },
+      "a, a:link, a:visited, a:hover, a:active": {
+        "color": `${colors.foreground} !important`,
+      },
+    });
+  }
+
+  rendition.themes.select(currentTheme);
+  rendition.themes.fontSize(`${currentFontSize}px`);
+  rendition.themes.override("line-height", String(currentLineHeight), true);
+  rendition.themes.override("font-family", fontFamily, true);
+
+  const rawContents = rendition.getContents?.();
+  const contentsList = Array.isArray(rawContents) ? rawContents : rawContents ? [rawContents] : [];
+  const activeColors = themeColors[currentTheme];
+  for (const item of contentsList) {
+    const doc = item && typeof item === "object" && "document" in item && item.document instanceof Document
+      ? item.document
+      : null;
+    if (doc?.documentElement) {
+      doc.documentElement.style.setProperty("background-color", activeColors.background, "important");
+      doc.documentElement.style.setProperty("color", activeColors.foreground, "important");
+    }
+    if (doc?.body) {
+      doc.body.style.setProperty("background-color", activeColors.background, "important");
+      doc.body.style.setProperty("color", activeColors.foreground, "important");
+    }
+  }
+}
+
 
 export function Reader({
   book,
@@ -67,6 +133,14 @@ export function Reader({
   const [theme, setTheme] = useState<ReaderTheme>("ink");
   const [fontSize, setFontSize] = useState(20);
   const [lineHeight, setLineHeight] = useState(1.7);
+  const themeRef = useRef(theme);
+  const fontSizeRef = useRef(fontSize);
+  const lineHeightRef = useRef(lineHeight);
+  useEffect(() => {
+    themeRef.current = theme;
+    fontSizeRef.current = fontSize;
+    lineHeightRef.current = lineHeight;
+  }, [theme, fontSize, lineHeight]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [toc, setToc] = useState<NavigationItem[]>([]);
@@ -158,9 +232,15 @@ export function Reader({
             frameCleanupRef.current = [];
             const frames = mountRef.current?.querySelectorAll("iframe") ?? [];
             frames.forEach((frame) => {
-              frame.setAttribute("sandbox", "allow-same-origin");
+              const activeColors = themeColors[themeRef.current];
+              frame.style.backgroundColor = activeColors.background;
               const document = frame.contentDocument;
               if (!document) return;
+              document.documentElement?.style.setProperty("background-color", activeColors.background, "important");
+              document.documentElement?.style.setProperty("color", activeColors.foreground, "important");
+              document.body?.style.setProperty("background-color", activeColors.background, "important");
+              document.body?.style.setProperty("color", activeColors.foreground, "important");
+
               const start = (event: Event) => {
                 const touch = (event as Event & { touches: globalThis.TouchList }).touches[0];
                 touchStartRef.current = touch?.clientX ?? null;
@@ -182,21 +262,69 @@ export function Reader({
             });
           };
 
-          builtRendition.on("rendered", () => removeFrameGestures());
-          builtRendition.on("relocated", (event: unknown) => {
-            const location = event as { start?: { cfi?: string; displayed?: { page?: number; total?: number } } } | undefined;
-            const cfi = location?.start?.cfi;
-            if (!cfi || !loadedBook.locations.length()) return;
-            const nextPercent = loadedBook.locations.percentageFromCfi(cfi) * 100;
-            setPercent(nextPercent);
-            setLocator({ format: "epub", cfi });
-            setPage(location?.start?.displayed?.page ?? 1);
-            setPages(location?.start?.displayed?.total ?? 0);
+          builtRendition.hooks.content.register((contents: { document?: Document }) => {
+            const doc = contents.document;
+            if (!doc) return;
+            const activeColors = themeColors[themeRef.current];
+            doc.documentElement?.style.setProperty("background-color", activeColors.background, "important");
+            doc.documentElement?.style.setProperty("color", activeColors.foreground, "important");
+            doc.body?.style.setProperty("background-color", activeColors.background, "important");
+            doc.body?.style.setProperty("color", activeColors.foreground, "important");
           });
-          await loadedBook.locations.generate(1200);
-          await builtRendition.display(initialPosition?.format === "epub" ? initialPosition.cfi : undefined);
+
+          applyThemeToRendition(builtRendition, themeRef.current, fontSizeRef.current, lineHeightRef.current);
+
+          builtRendition.on("rendered", () => {
+            removeFrameGestures();
+            if (!disposed) {
+              setLoading(false);
+              setReady(true);
+            }
+          });
+
+          builtRendition.on("relocated", (event: unknown) => {
+            const locationInfo = extractCfiAndDisplay(event);
+            const cfi = locationInfo.cfi;
+            if (!cfi) return;
+            setLocator({ format: "epub", cfi });
+            setPage(locationInfo.page ?? 1);
+            setPages(locationInfo.total ?? 0);
+            if (loadedBook.locations.length()) {
+              const nextPercent = loadedBook.locations.percentageFromCfi(cfi) * 100;
+              setPercent(nextPercent);
+            } else if (loadedBook.spine?.length) {
+              const section = loadedBook.spine.get(cfi);
+              if (section && typeof section.index === "number") {
+                const estimated = (section.index / loadedBook.spine.length) * 100;
+                setPercent(estimated);
+              }
+            }
+          });
+
+          void loadedBook.locations.generate(1600).then(() => {
+            if (disposed) return;
+            const locInfo = extractCfiAndDisplay(renditionRef.current?.location);
+            const currentCfi = locInfo.cfi;
+            if (currentCfi && loadedBook.locations.length()) {
+              setPercent(loadedBook.locations.percentageFromCfi(currentCfi) * 100);
+            }
+          }).catch((err) => {
+            console.warn("Background locations generation:", err);
+          });
+
+          try {
+            await builtRendition.display(initialPosition?.format === "epub" ? initialPosition.cfi : undefined);
+          } catch {
+            const fallback = (nav.toc && nav.toc[0]?.href) || loadedBook.spine.get(0)?.href;
+            if (fallback) {
+              await builtRendition.display(fallback);
+            }
+          }
           removeFrameGestures();
-          if (!disposed) setReady(true);
+          if (!disposed) {
+            setReady(true);
+            setLoading(false);
+          }
         } else {
           const pdfjs = await import("pdfjs-dist");
           pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
@@ -234,18 +362,13 @@ export function Reader({
   }, [book.id, book.format, initialPosition, nextPage, previousPage]);
 
   useEffect(() => {
+    themeRef.current = theme;
+    fontSizeRef.current = fontSize;
+    lineHeightRef.current = lineHeight;
     const rendition = renditionRef.current;
     if (!rendition || book.format !== "epub") return;
-    rendition.themes.register(theme, {
-      body: { background: themeColors[theme].background, color: themeColors[theme].foreground },
-      "a, a:link, a:visited, a:hover, a:active": { color: themeColors[theme].foreground },
-    });
-    rendition.themes.select(theme);
-    rendition.themes.fontSize(`${fontSize}px`);
-    rendition.themes.override("line-height", String(lineHeight), true);
-    const fontName = window.getComputedStyle(document.body).getPropertyValue("--font-newsreader").trim();
-    rendition.themes.override("font-family", `${fontName || "Georgia"}, serif`, true);
-  }, [book.format, fontSize, lineHeight, theme, ready]);
+    applyThemeToRendition(rendition, theme, fontSize, lineHeight);
+  }, [book.format, fontSize, lineHeight, theme]);
 
   useEffect(() => {
     const document = pdfDocumentRef.current;
@@ -350,6 +473,8 @@ export function Reader({
   }
 
   function openToc(item: NavigationItem) {
+    setLoading(false);
+    setReady(true);
     void renditionRef.current?.display(item.href);
     setTocOpen(false);
   }
