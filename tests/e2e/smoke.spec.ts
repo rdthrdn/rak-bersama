@@ -66,7 +66,11 @@ test("an invited member uploads both formats, resumes progress, and cannot expos
     if (title === "The Time Machine" && targetContext === memberA && captureScreenshots) {
       await capture(targetPage, "upload-empty");
     }
-    await targetPage.locator('input[type="file"]').setInputFiles(path.join(fixtureDirectory, filename));
+    const [fileChooser] = await Promise.all([
+      targetPage.waitForEvent("filechooser"),
+      targetPage.getByRole("button", { name: "Pilih berkas" }).click(),
+    ]);
+    await fileChooser.setFiles(path.join(fixtureDirectory, filename));
     await expect(targetPage.getByLabel("Judul buku")).toBeVisible({ timeout: 90_000 });
     await targetPage.getByLabel("Judul buku").fill(title);
     await targetPage.getByLabel("Penulis").fill(author);
@@ -108,9 +112,11 @@ test("an invited member uploads both formats, resumes progress, and cannot expos
     await expect(page.getByRole("button", { name: /The Imprudence of Prue.*buka detail/ })).toBeVisible();
     await capture(page, "shelf-personal");
     await page.goto("/?view=shared");
-    await expect(page.getByRole("button", { name: /The Time Machine.*buka detail/ })).toBeVisible();
+    const sharedCopies = page.getByRole("button", { name: /The Time Machine.*buka detail/ });
+    await expect(sharedCopies).toHaveCount(2);
     await capture(page, "shelf-shared");
-    await page.getByRole("button", { name: /The Time Machine.*buka detail/ }).click();
+    await sharedCopies.first().click();
+    await expect(page.locator(".detail-author")).toContainText("Anggota QA B");
     await expect(page.getByRole("button", { name: "Baca", exact: true })).toBeDisabled();
     await capture(page, "detail-shared");
 
@@ -126,24 +132,44 @@ test("an invited member uploads both formats, resumes progress, and cannot expos
     await capture(page, "admin");
 
     await page.goto("/books/" + epubId);
-    await page.getByRole("link", { name: "Baca" }).click();
+    await page.getByRole("link", { name: "Baca", exact: true }).click();
+    await expect(page.locator(".reader-screen")).toBeVisible({ timeout: 90_000 });
     await expect(page.locator(".epub-mount iframe")).toHaveCount(1, { timeout: 90_000 });
-    await capture(page, "reader-epub");
+    const epubBody = page.frameLocator(".epub-mount iframe").locator("body");
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      if ((await epubBody.innerText()).includes("The Time Traveller")) break;
+      await page.getByRole("button", { name: /Berikutnya/ }).click();
+    }
+    await expect.poll(async () => epubBody.innerText(), { timeout: 90_000 }).toContain("The Time Traveller");
+    const epubLinkColor = await page.frameLocator(".epub-mount iframe").locator("a[href]").first().evaluate((anchor) => window.getComputedStyle(anchor).color);
+    expect(epubLinkColor).toBe("rgb(236, 233, 226)");
+    await page.getByRole("button", { name: "Daftar isi" }).click();
+    await expect(page.getByRole("dialog", { name: "Daftar isi buku" })).toBeVisible();
+    await page.getByRole("button", { name: /Introduction/ }).click();
+    await expect.poll(async () => epubBody.innerText(), { timeout: 90_000 }).toContain("was expounding");
     const epubProgress = await saveNextProgress(epubId);
     expect(epubProgress.locator.format).toBe("epub");
+    await capture(page, "reader-epub");
     await page.reload();
+    await expect(page.locator(".reader-screen")).toBeVisible({ timeout: 90_000 });
     await expect(page.locator(".epub-mount iframe")).toHaveCount(1, { timeout: 90_000 });
+    await expect.poll(async () => page.frameLocator(".epub-mount iframe").locator("body").innerText(), { timeout: 90_000 }).toContain("was expounding");
     const resumedEpubResponse = await memberA.request.get(baseURL + "/api/books/" + epubId + "/progress");
     const resumedEpub = await resumedEpubResponse.json() as { progress: { locator: Record<string, unknown> } | null };
     expect(resumedEpub.progress?.locator.cfi).toBe(epubProgress.locator.cfi);
 
     const pdfId = uploaded.get("The Imprudence of Prue")!;
     await page.goto("/books/" + pdfId + "/read");
-    await expect(page.locator(".pdf-canvas")).toHaveAttribute("aria-label", /^Halaman 1 dari /, { timeout: 90_000 });
-    await capture(page, "reader-pdf");
+    await expect(page.locator(".reader-screen")).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator(".pdf-canvas")).toHaveAttribute("aria-label", /^Halaman 1 dari [1-9]\d*$/, { timeout: 90_000 });
+    await expect.poll(async () => page.locator(".pdf-canvas").evaluate((canvas) => (canvas as HTMLCanvasElement).width), { timeout: 90_000 }).toBeGreaterThan(0);
     const pdfProgress = await saveNextProgress(pdfId);
     expect(pdfProgress.locator).toMatchObject({ format: "pdf", page: 2 });
+    await expect(page.locator(".pdf-canvas")).toHaveAttribute("aria-label", /^Halaman 2 dari [1-9]\d*$/, { timeout: 90_000 });
+    await expect.poll(async () => Number(await page.locator(".reader-progress").getAttribute("aria-valuenow")), { timeout: 90_000 }).toBeGreaterThan(0);
+    await capture(page, "reader-pdf");
     await page.reload();
+    await expect(page.locator(".reader-screen")).toBeVisible({ timeout: 90_000 });
     await expect(page.locator(".pdf-canvas")).toHaveAttribute("aria-label", /^Halaman 2 dari /, { timeout: 90_000 });
     const resumedPdfResponse = await memberA.request.get(baseURL + "/api/books/" + pdfId + "/progress");
     const resumedPdf = await resumedPdfResponse.json() as { progress: { locator: Record<string, unknown> } | null };
@@ -152,7 +178,7 @@ test("an invited member uploads both formats, resumes progress, and cannot expos
     const sharedDetail = await memberB.request.get(baseURL + "/books/" + epubId);
     expect(sharedDetail.ok()).toBeTruthy();
     const fileResponse = await memberB.request.get(baseURL + "/api/books/" + epubId + "/file-url");
-    expect(fileResponse.status()).toBe(404);
+    expect(fileResponse.status()).toBe(403);
     expect(await fileResponse.json()).not.toHaveProperty("url");
     await expect(pageB).toHaveURL(new RegExp("/books/" + sharedBookId));
   } finally {

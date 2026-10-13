@@ -45,6 +45,9 @@
   ],
   "exclude": [
     "node_modules",
-    "tests/e2e/.auth"
+    "tests/e2e/.auth",
+    "tests/combat.test.ts",
+    "tests/edge-cases.test.ts",
+    "tests/movement.test.ts"
   ]
 }

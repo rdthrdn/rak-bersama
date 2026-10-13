@@ -45,8 +45,10 @@ export function Shelf({
   }
 
   function viewHref(nextView: ShelfView) {
-    const query = new URLSearchParams(window.location.search);
+    const query = new URLSearchParams();
     query.set("view", nextView);
+    if (status) query.set("status", status);
+    if (language) query.set("language", language);
     return `/?${query.toString()}`;
   }
 

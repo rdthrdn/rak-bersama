@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(12);
+select plan(15);
 
 insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
@@ -28,7 +28,7 @@ values (
   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   'Buku privat A', 'Penulis A', 'id', 'reading', 'pdf',
   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/dddddddd-dddd-4ddd-8ddd-dddddddddddd/book.pdf',
-  null
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/dddddddd-dddd-4ddd-8ddd-dddddddddddd/cover.jpg'
 )
 on conflict (id) do nothing;
 
@@ -41,7 +41,10 @@ values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'dddddddd-dddd-4ddd-8ddd-ddddddd
 on conflict (id) do nothing;
 
 insert into storage.objects (bucket_id, name)
-values ('books', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/dddddddd-dddd-4ddd-8ddd-dddddddddddd/book.pdf')
+values
+  ('books', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/dddddddd-dddd-4ddd-8ddd-dddddddddddd/book.pdf'),
+  ('covers', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/dddddddd-dddd-4ddd-8ddd-dddddddddddd/cover.jpg'),
+  ('covers', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/ffffffff-ffff-4fff-8fff-ffffffffffff/cover.jpg')
 on conflict do nothing;
 
 set local role authenticated;
@@ -49,11 +52,18 @@ select set_config('request.jwt.claims', '{"sub":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbb
 
 select is((select count(*)::integer from public.books where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), 1, 'member B can see member A book metadata');
 select is((select count(*)::integer from storage.objects where bucket_id = 'books' and name like 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/%'), 0, 'member B cannot read member A book object');
+select is((select count(*)::integer from storage.objects where bucket_id = 'covers' and name = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/dddddddd-dddd-4ddd-8ddd-dddddddddddd/cover.jpg'), 1, 'member B can read a registered cover');
+select is((select count(*)::integer from storage.objects where bucket_id = 'covers' and name = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/ffffffff-ffff-4fff-8fff-ffffffffffff/cover.jpg'), 0, 'member B cannot read an unregistered pending cover');
 select is((select count(*)::integer from public.reading_progress where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'), 0, 'member B cannot read member A progress');
 select is((select count(*)::integer from public.reviews where book_id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), 1, 'member B can read book reviews');
 
 update public.books set title = 'Buku diambil alih' where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 select is((select title from public.books where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), 'Buku privat A', 'member B cannot edit member A book');
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","role":"authenticated","email":"member-a@example.test"}', true);
+
+select is((select count(*)::integer from storage.objects where bucket_id = 'covers' and name = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/ffffffff-ffff-4fff-8fff-ffffffffffff/cover.jpg'), 1, 'cover owner can read a pending cover');
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","role":"authenticated","email":"outside@example.test"}', true);

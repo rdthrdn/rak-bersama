@@ -236,7 +236,10 @@ export function Reader({
   useEffect(() => {
     const rendition = renditionRef.current;
     if (!rendition || book.format !== "epub") return;
-    rendition.themes.register(theme, { body: { background: themeColors[theme].background, color: themeColors[theme].foreground } });
+    rendition.themes.register(theme, {
+      body: { background: themeColors[theme].background, color: themeColors[theme].foreground },
+      "a, a:link, a:visited, a:hover, a:active": { color: themeColors[theme].foreground },
+    });
     rendition.themes.select(theme);
     rendition.themes.fontSize(`${fontSize}px`);
     rendition.themes.override("line-height", String(lineHeight), true);

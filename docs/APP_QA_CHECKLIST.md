@@ -1,27 +1,29 @@
 # Pemeriksaan aplikasi Rak bersama
 
-Hasil ini diisi setelah alur dapat dijalankan terhadap layanan lokal. `UNVERIFIED` berarti bukti lingkungan atau kredensial belum tersedia; status itu tidak ditafsirkan sebagai lulus.
+Status: `LULUS` berarti ada bukti dari tes atau tinjauan kode yang disebutkan; `SEBAGIAN` berarti buktinya belum lengkap; `BELUM DIVERIFIKASI` berarti belum ada bukti yang cukup. Build, unit test, browser smoke, dan tes RLS lokal selesai pada 13 Oktober 2026. Login Google hosted dan deploy Vercel belum dapat diuji tanpa konfigurasi proyek.
 
 ## Pemeriksaan visual dan anti-slop
 
-- [ ] Arah warna, typeface, copy, dan hierarki layar dibandingkan dengan referensi desain dan screenshot browser.
-- [ ] Setidaknya lima titik dibandingkan: copy judul; bentuk rak/label; material dan pita seni; skala serta pasangan typeface; jarak dan layout pada layar kecil.
-- [ ] Copy first viewport tetap berasal dari brief; tidak ada kicker/badge atau klaim baru.
-- [ ] Semua route yang benar-benar dapat dibuka direkam di desktop 1440 dan ponsel 390.
-- [ ] Pattern memakai motif Klimt parametrik; teks selalu berada di permukaan tenang.
-- [ ] Tidak ada gradient ungu/biru, gradient teks, glow, glassmorphism, emoji, stok avatar, lorem ipsum, atau grid kartu generik.
-- [ ] Kontrol memakai Newsreader/Cormorant, fokus emas terlihat, dan reduced motion dihormati.
-- [ ] Reader mobile tidak menutupi teks dengan garis progres.
+- [LULUS — screenshot dan tinjauan visual] Dua puluh empat screenshot mencakup 12 keadaan login, rak, upload, detail, admin, dan reader pada lebar 1440 serta 390 piksel. Tinjauan sampel mencakup rak personal/shared, detail owner/shared, upload metadata, dan reader EPUB/PDF di desktop dan ponsel.
+- [LULUS — tinjauan visual] Login mempertahankan copy ringkas, palet, artwork, pasangan serif, hierarki, dan susunan layar kecil sesuai referensi.
+- [LULUS — tinjauan kode] `components/patterns/klimt-pattern.tsx` memakai enam motif mosaik, medali, bunga, garis, pohon, dan ubin; konten bacaan memiliki permukaan tenang.
+- [LULUS — tinjauan kode] Tidak ditemukan gradient teks, glassmorphism, glow, emoji, font sans generik, kartu dashboard seragam, atau warna Tailwind default pada UI; gradient yang ada hanya mask pudar dan garis tipis di chrome.
+- [LULUS — tinjauan kode dan screenshot] Cormorant Garamond dan Newsreader dimuat dari aset lokal; fokus memakai ring emas dan `prefers-reduced-motion` mematikan gerak panjang. Tautan EPUB mengikuti warna tema.
+- [LULUS — screenshot ponsel] Garis progres reader berada di bawah navigasi dan di luar bidang teks untuk EPUB maupun PDF.
 
 ## Keamanan dan fungsi
 
-- [ ] Route anggota mengarahkan pengunjung tanpa sesi ke `/login`.
-- [ ] Hanya Google OAuth tersedia pada UI login.
-- [ ] Callback memeriksa allowlist sebelum membuat profil; halaman undangan dibatasi ke admin.
-- [ ] `is_member()` dipakai setiap policy tabel/storage; uji SQL memeriksa isolasi anggota dan non-anggota.
-- [ ] File buku dan sampul memakai bucket privat; endpoint file memeriksa pemilik dan membuat URL maksimal 60 detik.
-- [ ] Unggah membatasi ukuran/jenis dan memvalidasi magic bytes di klien dan server; metadata EPUB dibaca dari OPF.
-- [ ] EPUB berada di iframe sandbox tanpa scripted content; PDF dirender oleh pdf.js.
-- [ ] Progres terpisah per pemilik, di-debounce, dan resume setelah reload.
-- [ ] Service-role key hanya di server; `.env.local` tidak dilacak; bundle produksi diperiksa.
-- [ ] Unit, typecheck, build, SQL RLS, dan browser smoke dicatat dengan hasil yang benar-benar dijalankan.
+- [LULUS — browser smoke] Pengunjung tanpa sesi diarahkan ke login; sesi anggota dapat membuka rak dan detail sesuai izin.
+- [LULUS — tinjauan kode] Tombol login hanya menawarkan Google OAuth.
+- [LULUS — tinjauan kode] Callback memeriksa email allowlist sebelum membuat profil; halaman pengelolaan undangan dibatasi ke admin. Alur OAuth Google hosted belum diuji.
+- [LULUS — tes SQL lokal] `is_member()` dipakai pada policy tabel dan storage; seluruh 15 assertion isolasi RLS lulus, termasuk akses sampul tertunda milik sendiri dan penolakannya bagi anggota lain.
+- [LULUS — tinjauan kode dan browser smoke] Bucket buku dan sampul privat; endpoint file memeriksa pemilik/path dan membuat signed URL 60 detik. Browser smoke mengonfirmasi anggota lain mendapat 403 tanpa URL file.
+- [LULUS — unit test dan browser smoke] Upload memeriksa ukuran dan magic bytes; EPUB membaca metadata OPF. Alur upload EPUB dan PDF lulus.
+- [LULUS — tinjauan kode dan browser smoke] EPUB dibuka dalam iframe sandbox tanpa scripted content; PDF dirender oleh pdf.js.
+- [LULUS — browser smoke] Progress EPUB dan PDF disimpan per anggota dan pulih setelah reload; tes juga membuka TOC EPUB dan berpindah halaman PDF.
+- [LULUS — tinjauan bundle/repo] Service-role key tidak ditemukan di bundle klien; `.env.local` diabaikan Git dan `.env.example` tersedia.
+- [LULUS — verifikasi lokal] Build produksi dan typecheck lulus; unit test 9/9; tes isolasi RLS 15/15; browser smoke 2/2.
+
+## Belum diverifikasi
+
+- [BELUM DIVERIFIKASI — perlu konfigurasi proyek] Login Google OAuth hosted, callback di domain produksi, dan deploy Vercel. Kredensial serta konfigurasi proyek hosted belum tersedia untuk sesi QA ini.
