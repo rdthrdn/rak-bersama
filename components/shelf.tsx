@@ -8,6 +8,7 @@ import type { BookCard, MemberRole, ReadingStatus } from "@/lib/database.types";
 import type { ShelfView } from "@/lib/book-repository";
 import { statusText } from "@/lib/book-utils";
 import { BookSpine } from "@/components/book-spine";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const statuses: Array<ReadingStatus | ""> = ["", "reading", "finished", "dropped", "paused", "unread"];
 
@@ -67,6 +68,7 @@ export function Shelf({
           <Link href={viewHref("shared")} className={`nav-link${view === "shared" ? " is-active" : ""}`}>Rak</Link>
           <Link href="/upload" className="nav-link">Unggah</Link>
           {member.role === "admin" && <Link href="/admin" className="nav-link">Undangan</Link>}
+          <ThemeToggle />
           <button type="button" className="member-avatar" title={member.display_name} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>{member.initials}</button>
           {menuOpen && (
             <form className="member-menu" action="/auth/signout" method="post">

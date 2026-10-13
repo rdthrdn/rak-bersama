@@ -9,6 +9,7 @@ import type { Book as EpubBook, Rendition as EpubRendition } from "epubjs";
 import type { BookRow, ReadingStatus } from "@/lib/database.types";
 import { BookTitle } from "@/components/book-title";
 import { SettingsPopover } from "@/components/settings-popover";
+import { KlimtLoading } from "@/components/klimt-loading";
 
 export type ReaderTheme = "ink" | "sepia" | "cream";
 type ReaderBook = Pick<BookRow, "id" | "title" | "author" | "language" | "pages" | "status" | "format">;
@@ -512,7 +513,7 @@ export function Reader({
 
       <section className="reader-main" aria-label={`Teks buku ${book.title}`}>
         <div className="reader-source-row"><p className="reader-source">{book.format.toUpperCase()} · {book.author}</p><span className="reader-save-state" role="status">{savingLabel}</span></div>
-        {loading && <p className="reader-loading" role="status">Membuka buku…</p>}
+        {loading && <KlimtLoading message="Membuka buku…" submessage="Memuat lembaran dan tipografi..." />}
         {problem && <p className="form-message is-error" role="alert">{problem}</p>}
         <div ref={resizeTargetRef} className="reader-stage" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           {book.format === "epub" ? (
