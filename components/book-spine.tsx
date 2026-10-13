@@ -1,7 +1,7 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import type { CSSProperties, KeyboardEvent } from "react";
+import { Reorder, useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { BookCard } from "@/lib/database.types";
 import { seedFromId, statusText } from "@/lib/book-utils";
@@ -27,21 +27,47 @@ export function BookSpine({ book, index }: { book: BookCard; index: number }) {
     "--spine-width": `${palette.width}px`,
     "--tilt": `${palette.tilt}deg`,
   } as CSSProperties;
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      router.push(`/books/${book.id}`);
+    }
+  }
 
   return (
-    <motion.button
-      type="button"
+    <Reorder.Item
+      as="div"
+      value={book}
+      id={book.id}
       className="book-spine"
       data-pattern={palette.motif}
       style={style}
-      aria-label={`${book.title} — ${book.author}, buka detail`}
-      layoutId={`book-cover-${book.id}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onClick={() => router.push(`/books/${book.id}`)}
+      aria-label={`${book.title} — ${book.author}, tahan dan geser untuk susun rak, klik untuk buka detail`}
       initial={reduceMotion ? false : { opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ opacity: { duration: 0.35, delay: reduceMotion ? 0 : index * 0.035 }, y: { duration: 0.52, delay: reduceMotion ? 0 : index * 0.035, ease: [0.22, 1, 0.36, 1] }, layout: { duration: 0.58, ease: [0.22, 1, 0.36, 1] } }}
-      whileHover={reduceMotion ? undefined : { y: -8, rotate: 0, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
-      whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-      onClick={() => router.push(`/books/${book.id}`)}
+      transition={{
+        opacity: { duration: 0.35, delay: reduceMotion ? 0 : index * 0.035 },
+        y: { duration: 0.52, delay: reduceMotion ? 0 : index * 0.035, ease: [0.22, 1, 0.36, 1] },
+        layout: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+      }}
+      whileHover={reduceMotion ? undefined : {
+        y: -12,
+        rotate: 0,
+        transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+      }}
+      whileDrag={{
+        scale: 1.05,
+        y: -26,
+        rotate: palette.tilt ? palette.tilt * 1.4 : 1.8,
+        zIndex: 60,
+        filter: "drop-shadow(0 30px 42px rgba(0, 0, 0, 0.88)) brightness(1.08)",
+        cursor: "grabbing",
+      }}
+      whileTap={{ scale: 0.985 }}
     >
       <span className="spine-top-cap" aria-hidden="true" />
       <span className="spine-pattern"><KlimtPattern motif={palette.motif} id={book.id} seed={seed} base={palette.base} gold={palette.gold} /></span>
@@ -62,6 +88,6 @@ export function BookSpine({ book, index }: { book: BookCard; index: number }) {
           </svg>
         )}
       </span>
-    </motion.button>
+    </Reorder.Item>
   );
 }

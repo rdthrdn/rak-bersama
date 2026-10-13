@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
+import { Reorder, motion, useReducedMotion } from "framer-motion";
 import type { BookCard, MemberRole, ReadingStatus } from "@/lib/database.types";
 import type { ShelfView } from "@/lib/book-repository";
 import { statusText } from "@/lib/book-utils";
@@ -33,8 +33,61 @@ export function Shelf({
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [orderedBooks, setOrderedBooks] = useState<BookCard[]>(books);
+  const [isCustomOrder, setIsCustomOrder] = useState(false);
   const reduceMotion = useReducedMotion();
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(`rak_order_${view}`);
+      if (saved) {
+        const ids = JSON.parse(saved) as string[];
+        if (Array.isArray(ids) && ids.length > 0) {
+          const map = new Map(books.map((b) => [b.id, b]));
+          const sorted: BookCard[] = [];
+          for (const id of ids) {
+            const item = map.get(id);
+            if (item) {
+              sorted.push(item);
+              map.delete(id);
+            }
+          }
+          for (const remaining of map.values()) {
+            sorted.push(remaining);
+          }
+          if (sorted.length > 0) {
+            setOrderedBooks(sorted);
+            setIsCustomOrder(true);
+            return;
+          }
+        }
+      }
+    } catch {
+      // Ignore localStorage issues
+    }
+    setOrderedBooks(books);
+    setIsCustomOrder(false);
+  }, [books, view]);
+
+  function handleReorder(newOrder: BookCard[]) {
+    setOrderedBooks(newOrder);
+    setIsCustomOrder(true);
+    try {
+      window.localStorage.setItem(`rak_order_${view}`, JSON.stringify(newOrder.map((b) => b.id)));
+    } catch {
+      // Ignore
+    }
+  }
+
+  function handleResetOrder() {
+    setOrderedBooks(books);
+    setIsCustomOrder(false);
+    try {
+      window.localStorage.removeItem(`rak_order_${view}`);
+    } catch {
+      // Ignore
+    }
+  }
   function changeQuery(values: Record<string, string>) {
     const query = new URLSearchParams(window.location.search);
     for (const [key, value] of Object.entries(values)) {
@@ -113,8 +166,20 @@ export function Shelf({
       <section className="shelf-display" aria-label="Koleksi buku">
         {books.length > 0 ? (
           <div className="shelf-stage">
+            <div className="shelf-wall-spotlight" aria-hidden="true" />
             <div className="shelf-viewport">
-              <div className="shelf-rail">{books.map((book, index) => <BookSpine key={book.id} book={book} index={index} />)}</div>
+              <Reorder.Group
+                as="div"
+                axis="x"
+                values={orderedBooks}
+                onReorder={handleReorder}
+                className="shelf-rail"
+                layoutScroll
+              >
+                {orderedBooks.map((book, index) => (
+                  <BookSpine key={book.id} book={book} index={index} />
+                ))}
+              </Reorder.Group>
             </div>
             <div className="shelf-woodwork" aria-hidden="true">
               <div className="shelf-plank-top" />
@@ -149,7 +214,15 @@ export function Shelf({
               </div>
             </div>
             <footer className="shelf-bottom-caption">
-              <span>{total} buku di {view === "shared" ? "rak bersama" : "rak pribadi"}</span>
+              <div className="shelf-caption-main">
+                <span>{total} buku di {view === "shared" ? "rak bersama" : "rak pribadi"}</span>
+                <span className="shelf-reorder-hint">✦ Tahan & geser buku untuk menata rak</span>
+                {isCustomOrder && (
+                  <button type="button" className="shelf-reset-btn" onClick={handleResetOrder}>
+                    Reset susunan
+                  </button>
+                )}
+              </div>
             </footer>
           </div>
         ) : (
