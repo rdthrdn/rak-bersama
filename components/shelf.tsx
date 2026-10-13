@@ -55,10 +55,18 @@ export function Shelf({
   return (
     <main className="shelf-page mx-auto w-full">
       <header className="archive-header">
-        <Link className="wordmark" href="/" aria-label="Rak bersama, beranda">Rak <em>bersama</em></Link>
+        <Link className="wordmark" href="/" aria-label="Rak bersama, beranda">
+          <svg className="wordmark-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 21V11M12 11C12 7.5 9.5 4 5 4c0 4.5 3.5 7 7 7zm0 0c0-3.5 2.5-7 7-7 0 4.5-3.5 7-7 7z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="12" cy="11" r="1.5" fill="currentColor" />
+            <path d="M12 17c-2.5-1.5-4-3-4-5M12 17c2.5-1.5 4-3 4-5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeOpacity="0.8" />
+          </svg>
+          <span className="wordmark-text">Rak bersama</span>
+        </Link>
         <nav className="archive-actions" aria-label="Menu anggota">
-          <Link href="/upload" className="text-button">Unggah buku</Link>
-          {member.role === "admin" && <Link href="/admin" className="text-button">Undangan</Link>}
+          <Link href={viewHref("shared")} className={`nav-link${view === "shared" ? " is-active" : ""}`}>Rak</Link>
+          <Link href="/upload" className="nav-link">Unggah</Link>
+          {member.role === "admin" && <Link href="/admin" className="nav-link">Undangan</Link>}
           <button type="button" className="member-avatar" title={member.display_name} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>{member.initials}</button>
           {menuOpen && (
             <form className="member-menu" action="/auth/signout" method="post">
@@ -70,40 +78,77 @@ export function Shelf({
       </header>
 
       <section className="shelf-hero" aria-labelledby="shelf-title">
-        <div className="shelf-art-band" aria-hidden="true" />
-        <motion.h1 id="shelf-title" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.68, ease: [0.22, 1, 0.36, 1] }}>
-          Rak <em>bersama</em>
-        </motion.h1>
-        <p>Buku-buku yang kami simpan, baca, dan terus ceritakan.</p>
-      </section>
+        <div className="shelf-tree-bg" aria-hidden="true" />
+        <div className="shelf-hero-left">
+          <motion.h1 id="shelf-title" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.68, ease: [0.22, 1, 0.36, 1] }}>
+            Rak bersama
+          </motion.h1>
 
-      <nav className="shelf-tabs" aria-label="Jenis rak">
-        <Link className={`shelf-tab${view === "mine" ? " is-active" : ""}`} aria-current={view === "mine" ? "page" : undefined} href={viewHref("mine")}>Rakku</Link>
-        <Link className={`shelf-tab${view === "shared" ? " is-active" : ""}`} aria-current={view === "shared" ? "page" : undefined} href={viewHref("shared")}>Rak bersama</Link>
-      </nav>
-
-      <section className="shelf-controls" aria-label="Saring buku">
-        <label className="select-control">
-          <span>Status</span>
-          <select value={status} onChange={(event) => changeQuery({ status: event.target.value })} aria-label="Saring berdasarkan status">
-            {statuses.map((value) => <option key={value || "all"} value={value}>{value ? statusText(value) : "Semua status"}</option>)}
-          </select>
-        </label>
-        <label className="select-control">
-          <span>Bahasa</span>
-          <select value={language} onChange={(event) => changeQuery({ language: event.target.value })} aria-label="Saring berdasarkan bahasa">
-            <option value="">Semua bahasa</option>
-            {languages.map((value) => <option key={value} value={value}>{value}</option>)}
-          </select>
-        </label>
-        <span className="filter-caption">{view === "mine" ? "Buku milik Anda" : "Metadata yang dibagikan anggota"}</span>
+          <section className="shelf-controls" aria-label="Saring buku">
+            <label className="select-control">
+              <span className="control-label">Status</span>
+              <div className="select-box">
+                <select value={status} onChange={(event) => changeQuery({ status: event.target.value })} aria-label="Saring berdasarkan status">
+                  {statuses.map((value) => <option key={value || "all"} value={value}>{value ? statusText(value) : "Semua status"}</option>)}
+                </select>
+                <span className="select-caret" aria-hidden="true">⌄</span>
+              </div>
+            </label>
+            <label className="select-control">
+              <span className="control-label">Bahasa</span>
+              <div className="select-box">
+                <select value={language} onChange={(event) => changeQuery({ language: event.target.value })} aria-label="Saring berdasarkan bahasa">
+                  <option value="">Semua bahasa</option>
+                  {languages.map((value) => <option key={value} value={value}>{value}</option>)}
+                </select>
+                <span className="select-caret" aria-hidden="true">⌄</span>
+              </div>
+            </label>
+          </section>
+        </div>
       </section>
 
       <section className="shelf-display" aria-label="Koleksi buku">
         {books.length > 0 ? (
-          <div className="shelf-viewport">
-            <div className="shelf-rail">{books.map((book, index) => <BookSpine key={book.id} book={book} index={index} />)}</div>
-            <div className="shelf-plank" aria-hidden="true" />
+          <div className="shelf-stage">
+            <div className="shelf-viewport">
+              <div className="shelf-rail">{books.map((book, index) => <BookSpine key={book.id} book={book} index={index} />)}</div>
+            </div>
+            <div className="shelf-woodwork" aria-hidden="true">
+              <div className="shelf-plank-top" />
+              <div className="shelf-plank-face" />
+              <div className="shelf-bracket shelf-bracket-left">
+                <svg viewBox="0 0 46 54" fill="none" className="bracket-svg">
+                  <path d="M0 0h46v12c-4 18-20 38-46 42V0z" fill="url(#bracket-wood-l)" />
+                  <path d="M12 12c4 10 14 20 28 26" stroke="#D0BD93" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.75" />
+                  <path d="M22 18c3 5 8 10 14 13" stroke="#D0BD93" strokeWidth="1" strokeLinecap="round" strokeOpacity="0.6" />
+                  <circle cx="28" cy="24" r="2" fill="#D0BD93" fillOpacity="0.8" />
+                  <defs>
+                    <linearGradient id="bracket-wood-l" x1="0" y1="0" x2="46" y2="54" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#3E3125" />
+                      <stop offset="1" stopColor="#221A13" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <div className="shelf-bracket shelf-bracket-right">
+                <svg viewBox="0 0 46 54" fill="none" className="bracket-svg">
+                  <path d="M46 0H0v12c4 18 20 38 46 42V0z" fill="url(#bracket-wood-r)" />
+                  <path d="M34 12c-4 10-14 20-28 26" stroke="#D0BD93" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.75" />
+                  <path d="M24 18c-3 5-8 10-14 13" stroke="#D0BD93" strokeWidth="1" strokeLinecap="round" strokeOpacity="0.6" />
+                  <circle cx="18" cy="24" r="2" fill="#D0BD93" fillOpacity="0.8" />
+                  <defs>
+                    <linearGradient id="bracket-wood-r" x1="46" y1="0" x2="0" y2="54" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#3E3125" />
+                      <stop offset="1" stopColor="#221A13" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+            <footer className="shelf-bottom-caption">
+              <span>{total} buku di {view === "shared" ? "rak bersama" : "rak pribadi"}</span>
+            </footer>
           </div>
         ) : (
           <div className="empty-shelf">
@@ -111,10 +156,6 @@ export function Shelf({
             {view === "mine" && collectionTotal === 0 && <Link href="/upload" className="text-button">Tambahkan buku pertama</Link>}
           </div>
         )}
-        <footer className="shelf-caption">
-          <span>{total} buku{language ? ` · ${language}` : ""}{status ? ` · ${statusText(status).toLowerCase()}` : ""}</span>
-          <span className="shelf-hint">Geser untuk melihat rak</span>
-        </footer>
       </section>
     </main>
   );
